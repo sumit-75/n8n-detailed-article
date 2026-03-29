@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>N8N Article – Developer Automation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --accent2: #ff3c6e;
+    --accent3: #7b61ff;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --tag-bg: #1a1a2e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--accent) 0%, transparent 100%);
+    opacity: 0.3;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 36px;
+    font-weight: 400;
+  }
+
+  /* Tags */
+  .tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 3px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .tag.green { border-color: var(--accent); color: var(--accent); }
+  .tag.red { border-color: var(--accent2); color: var(--accent2); }
+  .tag.purple { border-color: var(--accent3); color: var(--accent3); }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 40px 0;
+  }
+
+  /* Article body */
+  .article-body p {
+    font-size: 16.5px;
+    line-height: 1.78;
+    color: #c8c8d8;
+    margin-bottom: 22px;
+    font-weight: 400;
+  }
+
+  .article-body strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .article-body .highlight {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .article-body .warn {
+    color: var(--accent2);
+    font-weight: 700;
+  }
+
+  /* Section headers */
+  .section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 44px 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '//';
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0d0d16;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 18px 22px;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    margin: 24px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .code-block::before {
+    content: 'TERMINAL';
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  /* Pull quote */
+  .pull-quote {
+    border-left: 3px solid var(--accent2);
+    padding: 16px 24px;
+    margin: 32px 0;
+    background: rgba(255, 60, 110, 0.04);
+    border-radius: 0 6px 6px 0;
+  }
+  .pull-quote p {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: var(--text) !important;
+    line-height: 1.5 !important;
+    font-style: italic;
+    margin: 0 !important;
+  }
+
+  /* Use cases grid */
+  .use-cases {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .use-case-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    transition: border-color 0.2s;
+  }
+  .use-case-card:hover { border-color: var(--accent3); }
+  .use-case-card .icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .use-case-card .title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  .use-case-card .desc {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Steps */
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+  .step-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(0, 255, 136, 0.08);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step p {
+    font-size: 15.5px !important;
+    line-height: 1.65 !important;
+    margin: 0 !important;
+  }
+
+  /* CTA box */
+  .cta-box {
+    background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(123,97,255,0.06));
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin: 40px 0;
+    text-align: center;
+  }
+  .cta-box .cta-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .cta-box p {
+    font-size: 14.5px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+  }
+  .footer-brand {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+  .footer-stat {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  @media (max-width: 480px) {
+    .use-cases { grid-template-columns: 1fr; }
+    .footer { flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header-label">Developer Tools · Automation · Open Source</div>
+
+  <h1>We Can Automate Everything — Including Our Own Self-Destruction</h1>
+
+  <p class="subtitle">
+    As developers, we have a unique superpower: the ability to automate literally everything. And I mean <em>everything</em> — including the reminder to go outside once in a while.
+  </p>
+
+  <div class="tags">
+    <span class="tag green">#N8N</span>
+    <span class="tag red">#Automation</span>
+    <span class="tag purple">#OpenSource</span>
+    <span class="tag">#DevLife</span>
+    <span class="tag">#NoCode</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="article-body">
+
+    <div class="section-title">The Problem</div>
+
+    <p>
+      Touching grass is optional. Automating the reminder to touch grass? <strong class="warn">That's mandatory.</strong>
+    </p>
+
+    <p>
+      We're building automation workflows that run 24/7 — the kind that watch your back while you're busy breaking production at 3 AM. But before we get to the build, let me introduce the tool that makes all of this possible.
+    </p>
+
+    <div class="section-title">Meet N8N</div>
+
+    <p>
+      <strong class="highlight">N8N</strong> is the free, open-source alternative to Zapier — you know, that tool that charges you $69/month just to connect your email to Slack. N8N was literally built by a developer who looked at Zapier's pricing, said <em>"screw it,"</em> and built their own version.
+    </p>
+
+    <div class="pull-quote">
+      <p>"Your data. Your server. Your rules. No per-task fees. No artificial limits."</p>
+    </div>
+
+    <p>
+      The best part? It's <strong>completely self-hostable</strong>. You run it on your own machine or server. Nobody else touches your data. And unlike Zapier, you don't pay per automation run.
+    </p>
+
+    <div class="section-title">What Can You Actually Do With It?</div>
+
+    <p>Here's a taste of what people are already building:</p>
+
+    <div class="use-cases">
+      <div class="use-case-card">
+        <span class="icon">🐳</span>
+        <div class="title">Developers</div>
+        <div class="desc">Auto-deploy Docker containers on every GitHub PR merge</div>
+      </div>
+      <div class="use-case-card">
+        <span class="icon">📱</span>
+        <div class="title">Creators</div>
+        <div class="desc">Auto-share videos to every platform the second you upload</div>
+      </div>
+      <div class="use-case-card">
+        <span class="icon">🤖</span>
+        <div class="title">AI Workflows</div>
+        <div class="desc">Connect OpenAI to anything — emails, Notion, Slack, Discord</div>
+      </div>
+      <div class="use-case-card">
+        <span class="icon">📊</span>
+        <div class="title">Data Nerds</div>
+        <div class="desc">Scrape stats, run AI analysis, get alerts — fully automated</div>
+      </div>
+    </div>
+
+    <p>
+      The crazy part? <strong>You don't write a single line of code.</strong> It's a visual drag-and-drop canvas — think Figma, but for automation workflows instead of design files.
+    </p>
+
+    <div class="section-title">Getting Started in 5 Seconds</div>
+
+    <p>Want to try it locally right now? Open your terminal and type:</p>
+
+    <div class="code-block">$ npx n8n</div>
+
+    <p>
+      That's it. You're in. Localhost is great for testing — but for real 24/7 automation, you need actual hosting. A VPS with N8N pre-installed is the move. Plans start at just a few dollars a month and you can scale up anytime.
+    </p>
+
+    <div class="section-title">Let's Build Something Stupid — But Practical</div>
+
+    <p>
+      Here's my situation: I code late. <span class="warn">Way too late.</span> We're talking 2 AM, 3 AM, sometimes 4 AM. I don't have friends who are awake at those hours. So I automated one.
+    </p>
+
+    <p>
+      We're building a <strong>bot that checks the time every hour</strong> — and if it's past 10 PM and I'm still at my desk, it <strong class="highlight">sends me AI-generated insults via Slack</strong>. Because nothing motivates sleep like a Slack notification roasting you at 2 in the morning.
+    </p>
+
+    <p>Here's the full workflow, step by step:</p>
+
+    <div class="step">
+      <div class="step-num">01</div>
+      <p><strong>Schedule Trigger</strong> — Set it to run every hour, all day, every day. This is the heartbeat of the workflow.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <p><strong>Code Node</strong> — A tiny function that checks if the current time is between 10 PM and 4 AM. If it is, it returns <code style="color:var(--accent);font-family:'Space Mono',monospace;font-size:13px">shouldRemind: true</code>.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <p><strong>IF Node</strong> — If <code style="color:var(--accent);font-family:'Space Mono',monospace;font-size:13px">shouldRemind</code> is true, continue. Otherwise, do nothing. Workflow stays quiet during daylight hours.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <p><strong>OpenAI Node</strong> — Pass in a prompt that says: roast me harder depending on how late it is. 11 PM gets a gentle nudge. 3 AM gets destroyed.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">05</div>
+      <p><strong>Slack Node</strong> — Send the AI's roast to a dedicated Slack channel. Watch the message appear in real time. Feel shame. Go to sleep.</p>
+    </div>
+
+    <p>
+      Five nodes. Maybe 10 minutes of setup after you grab your ChatGPT API key and create a Slack bot. And now you have a workflow that runs <strong class="highlight">completely autonomously, every single hour</strong> — judging you so your friends don't have to.
+    </p>
+
+    <div class="section-title">Why N8N Is Worth Your Time</div>
+
+    <p>
+      N8N has <strong>over 8,000 community workflows</strong> ready to go. It's self-hosted, free forever, and it can connect literally anything to anything:
+    </p>
+
+    <p>
+      RSS feeds → AI summaries. Webhooks → databases. GitHub → Discord. Email → Notion. Your imagination is the only real limit. Well — your imagination and your API rate limits.
+    </p>
+
+    <div class="cta-box">
+      <div class="cta-title">Start automating tonight.</div>
+      <p>Run <code style="color:var(--accent);font-family:'Space Mono',monospace">npx n8n</code> in your terminal right now. Build one workflow. You will not stop at one workflow.</p>
+    </div>
+
+  </div><!-- /article-body -->
+
+  <div class="footer">
+    <span class="footer-brand">DEVTOOLS WEEKLY</span>
+    <span class="footer-stat">5 nodes · 10 min setup · ∞ automation</span>
+  </div>
+
+</div>
+</body>
+</html>
